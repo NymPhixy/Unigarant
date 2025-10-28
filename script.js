@@ -1,4 +1,14 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Progressive Web App install prompt helper
+  let deferredPrompt = null;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    deferredPrompt = e; // save the event for later trigger
+    const dl = document.getElementById("downloadBtn");
+    if (dl) dl.style.display = "";
+  });
+
   // Basic SPA navigation
   const screens = Array.from(document.querySelectorAll(".screen-page"));
   let current = "home";
@@ -18,8 +28,26 @@ document.addEventListener("DOMContentLoaded", function () {
     showScreen("home");
   });
 
-  document.getElementById("downloadBtn").addEventListener("click", () => {
-    showModal("Dankjewel — hier zou de App Store / downloadlink openen.");
+  const downloadBtnEl = document.getElementById("downloadBtn");
+  downloadBtnEl.addEventListener("click", () => {
+    // If we captured a beforeinstallprompt event, use it to show the install dialog
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === "accepted") {
+          showModal(
+            "Dankjewel — app kan nu worden geïnstalleerd (of staat in je startscherm)."
+          );
+        } else {
+          showModal(
+            "Installatie niet uitgevoerd. Je kunt de app nog steeds via de link openen."
+          );
+        }
+        deferredPrompt = null;
+      });
+    } else {
+      showModal("Dankjewel — hier zou de App Store / downloadlink openen.");
+    }
   });
 
   function showModal(message) {
@@ -798,4 +826,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Start on home
   showScreen("home");
+
+  // register a minimal service worker to allow PWA install (optional caching left out intentionally)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/service-worker.js")
+      .then(function (reg) {
+        console.log("Service worker registered.", reg);
+      })
+      .catch(function (err) {
+        console.warn("Service worker registration failed:", err);
+      });
+  }
 });

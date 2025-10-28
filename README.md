@@ -1,3 +1,40 @@
+# Unigarant Quiz Prototype — Mobile testing
+
+Korte instructies om deze HTML/CSS/JS-mockup als mobiele prototype te testen of te installeren.
+
+1. Lokale server (snelste, geen account)
+
+Open PowerShell in de projectmap en run:
+
+```powershell
+cd "C:\Users\ruben\OneDrive - Hanze\Hanze\Jaar 2\P1\TMS\Prototype"
+python -m http.server 8000
+```
+
+Zoek je PC's LAN-IP (`ipconfig`) en open op je telefoon:
+`http://<JE_PC_IP>:8000`
+
+2. Public hosting (aanbevolen voor demo)
+
+- GitHub Pages: push deze map naar een repo en activeer Pages op de `main` branch (of gebruik `/docs`).
+- Netlify / Vercel: drag & drop of koppel je Git-repo. Beide geven direct een publieke URL.
+
+3. Installeren als app (PWA)
+
+- De prototype heeft een `manifest.json` en een minimale service worker.
+- Bij moderne browsers verschijnt de install prompt (of klik op 'Download de app' knop als de prompt is opgeslagen).
+
+4. Test checklist
+
+- Controleer op echte telefoon: layout, touch targets, performance.
+- Test in Chrome DevTools (Device toolbar) voor snelle iteraties.
+- Maak screenshots van problemen en noteer fixes.
+
+5. Opmerkingen
+
+- Voor een volledige offline PWA kun je caching toevoegen in `service-worker.js`.
+- Voeg echte icon-bestanden toe in `icons/` (192/512) voor nette installatie-icoontjes.
+
 # Verzekerd op reis — Prototype web showcase
 
 Deze statische demo toont een iPhone-mockup waarin je een korte prototype-ervaring kunt doorlopen: de campagne "De Rustige Reis" met een korte quiz en resultaatpagina.
