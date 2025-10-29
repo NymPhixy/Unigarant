@@ -1189,6 +1189,58 @@ button.primary:active {
   }
 }
 
+/* Mobile launcher: visible on small screens only */
+.mobile-launcher {
+  display: none;
+}
+@media (max-width: 640px) {
+  .mobile-launcher {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 18px;
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    pointer-events: auto;
+  }
+  .mobile-launcher .btn--primary {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  }
+}
+
+/* When mobile-mode is active make the device take full screen for better viewing */
+.mobile-mode body,
+.mobile-mode .stage {
+  background: transparent;
+}
+.mobile-mode .device {
+  position: fixed;
+  inset: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  display: flex;
+  align-items: stretch;
+}
+.mobile-mode .screen {
+  border-radius: 0 !important;
+  height: 100% !important;
+}
+.mobile-mode .app-header {
+  height: 48px;
+  padding: 8px 12px;
+}
+.mobile-mode .app-body {
+  padding: 12px;
+}
+
 /* Larger screens: allow device to scale up a bit while staying centered */
 @media (min-width: 900px) {
   .device {

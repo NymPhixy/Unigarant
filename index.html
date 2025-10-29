@@ -121,7 +121,7 @@
                     <div id="quizCard" class="quiz-card">
                         <h3 id="quizQuestion">Vraag komt hier</h3>
                         <div id="quizChoices" class="choices"></div>
-                        <div id="hint" class="hint" aria-live="polite"></div>
+                        <div id="hint" class="hint" aria-live="polite" tabindex="-1"></div>
                     </div>
 
                     <div class="quiz-actions">
@@ -148,6 +148,10 @@
     <script src="script.js"></script>
     <!-- ARIA live region for accessibility announcements -->
     <div id="a11yLive" class="sr-only" aria-live="polite"></div>
+    <!-- Mobile launcher shown only on small devices to offer a direct mobile-friendly entry -->
+    <div id="mobileLauncher" class="mobile-launcher" aria-hidden="true">
+        <button id="mobileStartBtn" class="btn--primary">Start mobiele quiz</button>
+    </div>
 </body>
 
 </html>
