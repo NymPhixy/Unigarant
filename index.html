@@ -3,13 +3,19 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0096da">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- Recommended companion meta to replace deprecated apple-only name -->
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Unigarant App — Prototype</title>
     <!-- Fonts & icons per styleguide: Poppins + Material Symbols (weight 200) -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,200,0,0"
         rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.svg">
 </head>
 
 <body>
@@ -20,32 +26,96 @@
                 <header class="app-header">
                     <button id="backBtn" class="icon-btn" aria-label="terug">←</button>
                     <h1 id="appTitle">Unigarant App</h1>
-                    <div class="header-spacer"></div>
+                    <div class="header-actions">
+                        <button id="downloadBtn" class="btn secondary" style="display:none">Installeer</button>
+                        <button id="profileBtn" class="icon-btn" aria-label="Profiel">👤</button>
+                    </div>
                 </header>
 
-                <!-- Home scherm -->
+                <!-- Home scherm: everything lives inside the mockup -->
                 <section class="app-body screen-page" data-screen="home">
                     <div class="placeholder-logo">
                         <img class="logo-img"
                             src="https://cdn.brandfetch.io/id7DxNV-LN/w/319/h/119/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B"
                             alt="Unigarant logo">
                     </div>
-                    <h2>De Rustige Reis</h2>
-                    <p>Doe de korte quiz en ontdek welk rijstijlprofiel bij jou past. Leuk, snel en deelbaar.</p>
-                    <div class="actions">
-                        <button id="startQuizBtn" class="primary">Start de quiz</button>
-                        <button id="downloadBtn" class="secondary">Download de app</button>
+
+                    <!-- quick badges strip (summary) -->
+                    <div id="homeBadges" class="badges-strip" aria-hidden="false"></div>
+
+                    <!-- Carousel: campaign, features, quiz CTA, visit site, testimonials/FAQ -->
+                    <div class="carousel" role="region" aria-label="Belangrijkste functies">
+                        <div class="carousel-track" id="carouselTrack">
+                            <div class="carousel-slide">
+                                <h4>Campagne — De Rustige Reis</h4>
+                                <p>Doe mee aan onze campagne, maak kans op prijzen en ontvang persoonlijk advies.</p>
+                                <div class="slide-actions">
+                                    <a class="btn secondary" href="https://duo-stand-05987502.figma.site"
+                                        id="campaignLearn" target="_blank" rel="noopener noreferrer">Meer over de
+                                        campagne</a>
+                                </div>
+                            </div>
+
+                            <div class="carousel-slide">
+                                <h4>Snelle quiz</h4>
+                                <p>Klaar om te leren? Begin met een korte quiz en krijg direct persoonlijk advies.</p>
+                                <div class="slide-actions">
+                                    <button class="primary" id="startQuizBtnSlide">Doe de quiz</button>
+                                </div>
+                            </div>
+
+                            <div class="carousel-slide">
+                                <h4>Features</h4>
+                                <p>Korte quiz, persoonlijk advies en een compacte leerroute — altijd bij de hand.</p>
+                            </div>
+
+                            <div class="carousel-slide">
+                                <h4>Bezoek onze website</h4>
+                                <p>Bekijk extra content en tools op onze website.</p>
+                                <div class="slide-actions">
+                                    <a class="btn secondary" href="https://duo-stand-05987502.figma.site"
+                                        target="_blank" rel="noopener noreferrer">Bezoek site</a>
+                                </div>
+                            </div>
+
+                            <div class="carousel-slide">
+                                <h4>Ervaringen</h4>
+                                <p>"De quiz was kort en duidelijk — meteen bruikbaar advies." — Klant A</p>
+                            </div>
+                        </div>
+
+                        <button class="carousel-btn carousel-prev" id="carouselPrev" aria-label="Vorige">‹</button>
+                        <button class="carousel-btn carousel-next" id="carouselNext" aria-label="Volgende">›</button>
+                        <div class="carousel-indicators" id="carouselIndicators" role="tablist" aria-hidden="false">
+                        </div>
                     </div>
-                    <div class="campaign-note">
-                        <strong>Campagne:</strong> De Rustige Reis — maak kans op prijzen en ontvang persoonlijk advies.
+
+                    <!-- Primary actions inside the mockup (compact) -->
+                    <div class="primary-actions">
+                        <button id="startQuizBtnPrimary" class="primary">Doe de quiz</button>
+                        <a id="visitSitePrimary" class="btn secondary" href="https://duo-stand-05987502.figma.site"
+                            target="_blank" rel="noopener noreferrer">Bezoek site</a>
                     </div>
+                </section>
+
+                <!-- Chapters overzicht (locked until unlocked) -->
+                <section class="app-body screen-page" data-screen="chapters" style="display:none;">
+                    <h2>Hoofdstukken</h2>
+                    <p class="muted">Kies een hoofdstuk om te beginnen. Hoofdstukken zijn vergrendeld totdat je eerdere
+                        hoofdstukken hebt voltooid.</p>
+                    <div id="chaptersList" class="chapters-list"></div>
                 </section>
 
                 <!-- Quiz scherm -->
                 <section class="app-body screen-page" data-screen="quiz" style="display:none;">
                     <div class="chapter-header">
                         <div class="chapter-title">Hoofdstuk <span id="chapterIndex">1</span>/5</div>
-                        <div class="quiz-progress"><span id="qProgress">Vraag 1 van 8</span></div>
+                        <div style="flex:1; margin-left:12px;">
+                            <div class="quiz-progress"><span id="qProgress">Vraag 1 van 8</span></div>
+                            <div class="progress-bar-wrap" aria-hidden="true">
+                                <div class="progress-bar" id="qProgressBar" style="width:0%"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="quizCard" class="quiz-card">
@@ -74,7 +144,10 @@
             </div>
         </div>
     </div>
+
     <script src="script.js"></script>
+    <!-- ARIA live region for accessibility announcements -->
+    <div id="a11yLive" class="sr-only" aria-live="polite"></div>
 </body>
 
 </html>
