@@ -28,7 +28,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   document.getElementById("backBtn").addEventListener("click", () => {
-    if (current === "home") return;
+    if (current === "home") {
+      // if we're already on home and mobile-mode is active, exit mobile-mode
+      if (document.body.classList.contains("mobile-mode")) {
+        document.body.classList.remove("mobile-mode");
+        const ml = document.getElementById("mobileLauncher");
+        if (ml) ml.setAttribute("aria-hidden", "false");
+      }
+      return;
+    }
     showScreen("home");
   });
 
@@ -639,6 +647,40 @@ document.addEventListener("DOMContentLoaded", function () {
       // show chapters overview first
       renderChapters();
       showScreen("chapters");
+    });
+  }
+
+  // Mobile launcher wiring: show mobile launcher on small devices
+  const mobileLauncher = document.getElementById("mobileLauncher");
+  const mobileStartBtn = document.getElementById("mobileStartBtn");
+  function isSmallDevice() {
+    try {
+      return (
+        window.matchMedia && window.matchMedia("(max-width: 640px)").matches
+      );
+    } catch (e) {
+      return /Mobi|Android|iPhone|iPad/.test(navigator.userAgent || "");
+    }
+  }
+  if (mobileLauncher) {
+    // show the launcher only on small devices
+    if (isSmallDevice()) {
+      mobileLauncher.setAttribute("aria-hidden", "false");
+      mobileLauncher.style.display = "flex";
+    } else {
+      mobileLauncher.setAttribute("aria-hidden", "true");
+      mobileLauncher.style.display = "none";
+    }
+  }
+  if (mobileStartBtn) {
+    mobileStartBtn.addEventListener("click", () => {
+      // enter mobile-mode (makes the device full-screen) and open chapters in the mockup
+      document.body.classList.add("mobile-mode");
+      if (mobileLauncher) mobileLauncher.setAttribute("aria-hidden", "true");
+      renderChapters();
+      showScreen("chapters");
+      // small delay to allow layout, then scroll top
+      setTimeout(() => window.scrollTo(0, 0), 120);
     });
   }
 
@@ -1267,9 +1309,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // short delay then advance
+    // give users more time to read the hint when the answer was wrong or skipped
+    let delayMs = 700; // default for correct
+    if (
+      isSkip ||
+      selectedChoice === -1 ||
+      (selectedChoice !== correctIdx && !isSkip)
+    ) {
+      // wrong or skipped answers — allow more time to read the hint
+      delayMs = 2200;
+      // focus the hint area so users (and screen readers) notice it
+      try {
+        hintEl.setAttribute("tabindex", "-1");
+        hintEl.focus();
+      } catch (e) {}
+    }
     setTimeout(() => {
       advanceQuestion();
-    }, 700);
+    }, delayMs);
   }
 
   function advanceQuestion() {
