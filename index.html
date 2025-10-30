@@ -34,7 +34,7 @@
 
                 <!-- Home scherm: everything lives inside the mockup -->
                 <section class="app-body screen-page" data-screen="home">
-                    <div class="placeholder-logo">
+                    <div class="placeholder-logo large">
                         <img class="logo-img"
                             src="https://cdn.brandfetch.io/id7DxNV-LN/w/319/h/119/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B"
                             alt="Unigarant logo">
@@ -60,7 +60,8 @@
                                 <h4>Snelle quiz</h4>
                                 <p>Klaar om te leren? Begin met een korte quiz en krijg direct persoonlijk advies.</p>
                                 <div class="slide-actions">
-                                    <button class="primary" id="startQuizBtnSlide">Doe de quiz</button>
+                                    <button class="primary primary-emph pulse" id="startQuizBtnSlide">Doe de
+                                        quiz</button>
                                 </div>
                             </div>
 
@@ -92,9 +93,24 @@
 
                     <!-- Primary actions inside the mockup (compact) -->
                     <div class="primary-actions">
-                        <button id="startQuizBtnPrimary" class="primary">Doe de quiz</button>
+                        <button id="startQuizBtnPrimary" class="primary primary-emph pulse">Doe de quiz</button>
                         <a id="visitSitePrimary" class="btn secondary" href="https://duo-stand-05987502.figma.site"
                             target="_blank" rel="noopener noreferrer">Bezoek site</a>
+                    </div>
+
+                    <!-- Leaderboard preview on home -->
+                    <div id="leaderboard" class="leaderboard collapsed" aria-live="polite">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                            <h3 style="margin:0">Topspelers — Leaderboard</h3>
+                            <div class="leaderboard-controls">
+                                <!-- Demo controls removed: leaderboard is static for seeded accounts -->
+                            </div>
+                        </div>
+                        <div id="leaderboardList" class="leaderboard-list">
+                            <!-- populated by script.js -->
+                        </div>
+                        <small class="muted">Ranking gebaseerd op zo min mogelijk foute antwoorden per
+                            hoofdstuk.</small>
                     </div>
                 </section>
 
@@ -121,7 +137,7 @@
                     <div id="quizCard" class="quiz-card">
                         <h3 id="quizQuestion">Vraag komt hier</h3>
                         <div id="quizChoices" class="choices"></div>
-                        <div id="hint" class="hint" aria-live="polite"></div>
+                        <div id="hint" class="hint" aria-live="polite" tabindex="-1"></div>
                     </div>
 
                     <div class="quiz-actions">
@@ -148,6 +164,10 @@
     <script src="script.js"></script>
     <!-- ARIA live region for accessibility announcements -->
     <div id="a11yLive" class="sr-only" aria-live="polite"></div>
+    <!-- Mobile launcher shown only on small devices to offer a direct mobile-friendly entry -->
+    <div id="mobileLauncher" class="mobile-launcher" aria-hidden="true">
+        <button id="mobileStartBtn" class="btn--primary">Start mobiele quiz</button>
+    </div>
 </body>
 
 </html>

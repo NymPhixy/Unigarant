@@ -2,16 +2,17 @@
 
 Korte instructies om deze HTML/CSS/JS-mockup als mobiele prototype te testen of te installeren.
 
-1. Lokale server (snelste, geen account)
+1. Lokale server met Node (aanbevolen — geen Python nodig)
 
 Open PowerShell in de projectmap en run:
 
 ```powershell
 cd "C:\Users\ruben\OneDrive - Hanze\Hanze\Jaar 2\P1\TMS\Prototype"
-python -m http.server 8000
+npm install
+npm run dev
 ```
 
-Zoek je PC's LAN-IP (`ipconfig`) en open op je telefoon:
+De site wordt dan geserveerd op poort 8000. Zoek je PC's LAN-IP met `ipconfig` en open op je telefoon:
 `http://<JE_PC_IP>:8000`
 
 2. Public hosting (aanbevolen voor demo)
@@ -53,13 +54,15 @@ Bestanden
 
 Hoe te gebruiken
 
-1. Open de map in Verkenner en dubbelklik `index.html`, of open PowerShell en voer uit:
+1. Open de map in Verkenner en dubbelklik `index.html` (snelle preview), of start lokaal met npm:
 
 ```powershell
-Start-Process .\index.html
+npm install
+npm run dev
+# open op de PC: http://localhost:8000
 ```
 
-2. In de mockup: klik op "Start de quiz" om te beginnen. Beantwoord 3 korte vragen en bekijk je profielresultaat.
+2. In de mockup: klik op "Start de quiz" om te beginnen. Beantwoord de vragen per hoofdstuk en bekijk je profielresultaat.
 
 Wat kun je verder doen
 

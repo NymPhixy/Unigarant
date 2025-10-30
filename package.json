@@ -1,0 +1,13 @@
+{
+  "name": "unigarant-quiz-prototype",
+  "version": "0.1.0",
+  "description": "Static prototype for the 'De Rustige Reis' quiz (mobile mockup)",
+  "scripts": {
+    "dev": "http-server -c-1 -p 8000"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "author": "",
+  "license": "MIT"
+}

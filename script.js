@@ -1,4 +1,172 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Debug helper: collect runtime errors and show a small debug panel inside the page.
+  // This helps capture errors when you test on a phone or a device where opening devtools is harder.
+  (function setupRuntimeErrorPanel() {
+    try {
+      const errors = [];
+      window._ug_runtimeErrors = errors;
+
+      function renderPanel() {
+        let panel = document.getElementById("ug-debug-panel");
+        if (!panel) return;
+        const list = panel.querySelector(".ug-list");
+        list.innerHTML = "";
+        errors
+          .slice()
+          .reverse()
+          .forEach((err, i) => {
+            const el = document.createElement("div");
+            el.className = "ug-item";
+            el.style.borderTop = "1px solid rgba(0,0,0,0.06)";
+            el.style.padding = "6px 8px";
+            el.style.fontSize = "12px";
+            el.style.whiteSpace = "pre-wrap";
+            el.textContent = `[${new Date(err.at).toLocaleTimeString()}] ${
+              err.msg
+            }`;
+            list.appendChild(el);
+          });
+      }
+
+      function ensurePanel() {
+        if (document.getElementById("ug-debug-panel")) return;
+        const panel = document.createElement("div");
+        panel.id = "ug-debug-panel";
+        panel.style.position = "fixed";
+        panel.style.right = "12px";
+        panel.style.bottom = "12px";
+        panel.style.width = "320px";
+        panel.style.maxHeight = "50vh";
+        panel.style.background = "rgba(255,255,255,0.98)";
+        panel.style.boxShadow = "0 8px 24px rgba(0,0,0,0.12)";
+        panel.style.borderRadius = "10px";
+        panel.style.zIndex = 99999;
+        panel.style.overflow = "auto";
+        panel.style.fontFamily = "Inter, Arial, sans-serif";
+        panel.style.display = "none"; // hidden by default
+
+        const hdr = document.createElement("div");
+        hdr.style.display = "flex";
+        hdr.style.alignItems = "center";
+        hdr.style.justifyContent = "space-between";
+        hdr.style.padding = "8px";
+        hdr.style.gap = "8px";
+        const title = document.createElement("div");
+        title.textContent = "Debug — runtime errors";
+        title.style.fontSize = "13px";
+        title.style.fontWeight = "700";
+        const ctrls = document.createElement("div");
+        const copyBtn = document.createElement("button");
+        copyBtn.textContent = "Kopieer";
+        copyBtn.className = "tertiary";
+        copyBtn.style.fontSize = "12px";
+        copyBtn.addEventListener("click", () => {
+          const text = errors
+            .map((e) => `[${new Date(e.at).toISOString()}] ${e.msg}`)
+            .join("\n\n");
+          try {
+            navigator.clipboard
+              .writeText(text)
+              .then(() => alert("Foutmeldingen gekopieerd naar klembord."))
+              .catch(() => prompt("Kopieer de fouten handmatig:", text));
+          } catch (e) {
+            prompt("Kopieer de fouten handmatig:", text);
+          }
+        });
+        const clearBtn = document.createElement("button");
+        clearBtn.textContent = "Leeg";
+        clearBtn.className = "tertiary";
+        clearBtn.style.fontSize = "12px";
+        clearBtn.addEventListener("click", () => {
+          errors.length = 0;
+          renderPanel();
+        });
+        ctrls.appendChild(copyBtn);
+        ctrls.appendChild(clearBtn);
+        hdr.appendChild(title);
+        hdr.appendChild(ctrls);
+
+        const list = document.createElement("div");
+        list.className = "ug-list";
+        list.style.padding = "6px 8px";
+        list.style.maxHeight = "calc(50vh - 48px)";
+        list.style.overflow = "auto";
+
+        panel.appendChild(hdr);
+        panel.appendChild(list);
+        document.body.appendChild(panel);
+
+        const toggle = document.createElement("button");
+        toggle.id = "ug-debug-toggle";
+        toggle.textContent = "Dbg";
+        toggle.title = "Toggle debug panel";
+        toggle.style.position = "fixed";
+        toggle.style.right = "12px";
+        toggle.style.bottom = "12px";
+        toggle.style.zIndex = 99998;
+        toggle.style.width = "44px";
+        toggle.style.height = "44px";
+        toggle.style.borderRadius = "999px";
+        toggle.style.border = "none";
+        toggle.style.background = "#ffd66a";
+        toggle.style.cursor = "pointer";
+        toggle.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)";
+        toggle.addEventListener("click", () => {
+          const p = document.getElementById("ug-debug-panel");
+          if (!p) return;
+          if (p.style.display === "none") {
+            p.style.display = "block";
+            toggle.style.display = "none"; // hide toggle when panel open
+            renderPanel();
+          }
+        });
+        document.body.appendChild(toggle);
+      }
+
+      function addError(msg) {
+        errors.push({ at: Date.now(), msg: String(msg) });
+        window._ug_runtimeErrors = errors;
+        const panel = document.getElementById("ug-debug-panel");
+        if (panel && panel.style.display !== "none") renderPanel();
+      }
+
+      window.addEventListener("error", function (ev) {
+        try {
+          const out =
+            ev.error && ev.error.stack
+              ? ev.error.stack
+              : ev.message || String(ev);
+          addError(out);
+          // still log to console
+          console.error("Captured error:", ev.error || ev.message || ev);
+        } catch (e) {}
+      });
+
+      window.addEventListener("unhandledrejection", function (ev) {
+        try {
+          const reason =
+            ev.reason && ev.reason.stack
+              ? ev.reason.stack
+              : ev.reason || String(ev);
+          addError(`UnhandledRejection: ${reason}`);
+          console.error("Captured unhandledrejection:", ev.reason || ev);
+        } catch (e) {}
+      });
+
+      // expose function for manual logging
+      window._ug_logRuntime = function (msg) {
+        try {
+          addError(msg);
+        } catch (e) {}
+      };
+
+      // ensure panel exists once DOM is available
+      setTimeout(ensurePanel, 80);
+    } catch (e) {
+      // ignore any failures in the debug helper
+      console.warn("Runtime debug panel setup failed:", e);
+    }
+  })();
   // Progressive Web App install prompt helper
   let deferredPrompt = null;
   window.addEventListener("beforeinstallprompt", (e) => {
@@ -28,7 +196,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   document.getElementById("backBtn").addEventListener("click", () => {
-    if (current === "home") return;
+    if (current === "home") {
+      // if we're already on home and mobile-mode is active, exit mobile-mode
+      if (document.body.classList.contains("mobile-mode")) {
+        document.body.classList.remove("mobile-mode");
+        const ml = document.getElementById("mobileLauncher");
+        if (ml) ml.setAttribute("aria-hidden", "false");
+      }
+      return;
+    }
     showScreen("home");
   });
 
@@ -630,6 +806,12 @@ document.addEventListener("DOMContentLoaded", function () {
   let qIndex = 0;
   let wrongList = []; // list of question objects to retry
   let selectedChoice = null;
+  // per-chapter counters
+  let initialWrongCount = 0; // number of unique wrong answers during the initial pass
+  let currentStreak = 0; // consecutive correct answers
+  // leaderboard UI state: show compact preview on home, expand on click
+  let leaderboardCollapsed = true;
+  const LEADERBOARD_PREVIEW_COUNT = 3;
   // per-chapter timing and state for badges
   const chapterStartTimes = {};
   let chapterHadWrong = false;
@@ -639,6 +821,40 @@ document.addEventListener("DOMContentLoaded", function () {
       // show chapters overview first
       renderChapters();
       showScreen("chapters");
+    });
+  }
+
+  // Mobile launcher wiring: show mobile launcher on small devices
+  const mobileLauncher = document.getElementById("mobileLauncher");
+  const mobileStartBtn = document.getElementById("mobileStartBtn");
+  function isSmallDevice() {
+    try {
+      return (
+        window.matchMedia && window.matchMedia("(max-width: 640px)").matches
+      );
+    } catch (e) {
+      return /Mobi|Android|iPhone|iPad/.test(navigator.userAgent || "");
+    }
+  }
+  if (mobileLauncher) {
+    // show the launcher only on small devices
+    if (isSmallDevice()) {
+      mobileLauncher.setAttribute("aria-hidden", "false");
+      mobileLauncher.style.display = "flex";
+    } else {
+      mobileLauncher.setAttribute("aria-hidden", "true");
+      mobileLauncher.style.display = "none";
+    }
+  }
+  if (mobileStartBtn) {
+    mobileStartBtn.addEventListener("click", () => {
+      // enter mobile-mode (makes the device full-screen) and open chapters in the mockup
+      document.body.classList.add("mobile-mode");
+      if (mobileLauncher) mobileLauncher.setAttribute("aria-hidden", "true");
+      renderChapters();
+      showScreen("chapters");
+      // small delay to allow layout, then scroll top
+      setTimeout(() => window.scrollTo(0, 0), 120);
     });
   }
 
@@ -1125,6 +1341,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // record start time for potential "Snelle Starter" badge and reset wrong flag
     chapterStartTimes[currentChapter] = Date.now();
     chapterHadWrong = false;
+    // reset per-chapter counters
+    initialWrongCount = 0;
+    currentStreak = 0;
     renderQuestion();
     showScreen("quiz");
     updateChapterHeader();
@@ -1252,14 +1471,24 @@ document.addEventListener("DOMContentLoaded", function () {
       if (phase === "retry") {
         wrongList = wrongList.filter((w) => w.id !== item.id);
       }
+      // streak handling: increment for correct answers
+      try {
+        currentStreak = (currentStreak || 0) + 1;
+        // show visual reward for streaks (2 or more in a row)
+        if (currentStreak >= 2) showStreakBadge(currentStreak);
+      } catch (e) {}
     } else {
       // wrong
       chapterHadWrong = true;
+      // reset streak on wrong answer
+      currentStreak = 0;
       if (selectedChoice >= 0 && buttons[selectedChoice])
         buttons[selectedChoice].classList.add("incorrect");
       // add to wrongList if not already present
       if (!wrongList.find((w) => w.id === item.id)) {
         wrongList.push(Object.assign({}, item));
+        // track initial-pass unique wrongs for leaderboard scoring
+        if (phase === "initial") initialWrongCount++;
       }
       // show hint
       hintEl.textContent = item.hint || "Let op de polisvoorwaarden.";
@@ -1267,9 +1496,24 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // short delay then advance
+    // give users more time to read the hint when the answer was wrong or skipped
+    let delayMs = 700; // default for correct
+    if (
+      isSkip ||
+      selectedChoice === -1 ||
+      (selectedChoice !== correctIdx && !isSkip)
+    ) {
+      // wrong or skipped answers — allow more time to read the hint
+      delayMs = 2200;
+      // focus the hint area so users (and screen readers) notice it
+      try {
+        hintEl.setAttribute("tabindex", "-1");
+        hintEl.focus();
+      } catch (e) {}
+    }
     setTimeout(() => {
       advanceQuestion();
-    }, 700);
+    }, delayMs);
   }
 
   function advanceQuestion() {
@@ -1334,6 +1578,13 @@ document.addEventListener("DOMContentLoaded", function () {
     if (shouldUnlock > unlocked) setUnlockedChapters(shouldUnlock);
     renderChapters();
     showModal("Hoofdstuk voltooid — voortgang opgeslagen.");
+    // update leaderboard with player's chapter performance (use initialWrongCount captured at start of retry)
+    try {
+      const mistakes =
+        typeof initialWrongCount !== "undefined" ? initialWrongCount : 0;
+      updateLeaderboardWithUser(mistakes);
+      renderLeaderboard();
+    } catch (e) {}
   }
 
   function showChapterSummary() {
@@ -1372,6 +1623,27 @@ document.addEventListener("DOMContentLoaded", function () {
       } else showFinalResult();
     });
     box.appendChild(next);
+    // small signup CTA encouraging sign-up and chance to win a goodie bag
+    // only show CTA if user is not signed in (keeps overlay small for signed-in users)
+    const profile = getProfile();
+    if (!profile) {
+      const ctaWrap = document.createElement("div");
+      ctaWrap.style.display = "flex";
+      ctaWrap.style.gap = "8px";
+      ctaWrap.style.alignItems = "center";
+      ctaWrap.style.marginTop = "10px";
+      const cta = document.createElement("button");
+      cta.className = "signup-cta";
+      cta.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2l2.09 5.26L20 8.27l-4 3.9L17.18 18 12 15.27 6.82 18 8 12.17 4 8.27l5.91-.01L12 2z" fill="#FFD66A"/></svg> Meld je aan & maak kans op een goodie bag`;
+      cta.addEventListener("click", () => {
+        showModal(
+          "Meld je aan op onze website en maak elke dag kans op een Unigarant goodie bag!\n\nJe wordt doorgestuurd naar de website."
+        );
+        window.open("https://www.unigarant.nl", "_blank");
+      });
+      ctaWrap.appendChild(cta);
+      box.appendChild(ctaWrap);
+    }
     overlay.appendChild(box);
     // append inside the active device screen so it stays within the mockup bounds
     const screenEl = document.querySelector(".screen");
@@ -1391,6 +1663,427 @@ document.addEventListener("DOMContentLoaded", function () {
     desc.textContent =
       "Je hebt alle hoofdstukken doorlopen. Herhaal een hoofdstuk om je score te verbeteren.";
     showScreen("result");
+  }
+
+  // ---- Leaderboard: seed, persistence and rendering ----
+  function getLeaderboard() {
+    try {
+      return JSON.parse(localStorage.getItem("ug_leaderboard") || "null") || [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function setLeaderboard(arr) {
+    localStorage.setItem("ug_leaderboard", JSON.stringify(arr));
+  }
+  function seedLeaderboardIfEmpty() {
+    const cur = getLeaderboard();
+    if (cur.length > 0) return cur;
+    // seeded names (add a few extras so the list feels populated)
+    const names = [
+      "Sanne",
+      "Ravi",
+      "Jules",
+      "Aisha",
+      "Milan",
+      "Lotte",
+      "Noor",
+      "Thijs",
+      "Emma",
+      "Sem",
+    ];
+    const seed = names.map((n) => {
+      const chaptersDone = Math.max(
+        1,
+        Math.min(
+          chapters.length,
+          Math.round(1 + Math.random() * (chapters.length - 1))
+        )
+      );
+      const mistakes = Math.max(0, Math.round(Math.random() * 8));
+      return {
+        name: n,
+        chapters: chaptersDone,
+        mistakes: mistakes,
+        // use a visibly random avatar so seeded accounts look varied each time
+        avatar: avatarRandomForName(n),
+      };
+    });
+    setLeaderboard(seed);
+    return seed;
+  }
+
+  // Create a colorful random-looking SVG avatar for a name (no network)
+  function avatarRandomForName(name, size = 64) {
+    // derive initials
+    const initials = (name || "U")
+      .split(" ")
+      .map((s) => s[0] || "")
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+    // randomize colors and pattern
+    const colors = [
+      "#F6D365",
+      "#FDBB2D",
+      "#FF7A7A",
+      "#9EE493",
+      "#9AD0F5",
+      "#D6A4FF",
+      "#FFD66A",
+      "#C7F9CC",
+      "#A0E7E5",
+    ];
+    // create a pseudo-random seed from name + timestamp so avatars vary per seed
+    let rnd = 0;
+    for (let i = 0; i < name.length; i++)
+      rnd = (rnd << 5) - rnd + name.charCodeAt(i);
+    rnd = Math.abs(rnd) % 9973;
+    const bg = colors[rnd % colors.length];
+    const accent = colors[(rnd + 3) % colors.length];
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'><defs><linearGradient id='g' x1='0' x2='1' y1='0' y2='1'><stop offset='0' stop-color='${bg}'/><stop offset='1' stop-color='${accent}'/></linearGradient></defs><rect width='100%' height='100%' fill='url(#g)' rx='${Math.round(
+      size * 0.18
+    )}'/><text x='50%' y='50%' font-family='Arial, Helvetica, sans-serif' font-size='${Math.round(
+      size / 2.6
+    )}' fill='#000' dominant-baseline='middle' text-anchor='middle' font-weight='700'>${initials}</text></svg>`;
+    return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+  }
+
+  // (reset helper removed) leaderboard is seeded once and stays static unless the user updates their own entry
+
+  function renderLeaderboard() {
+    const container = document.getElementById("leaderboardList");
+    if (!container) return;
+    const list = getLeaderboard();
+    // sort by mistakes asc, chapters desc
+    list.sort((a, b) => {
+      if (a.mistakes !== b.mistakes) return a.mistakes - b.mistakes;
+      return b.chapters - a.chapters;
+    });
+    // compare with previous ordering so we can animate moves
+    const oldOrder = (window._ug_lastLeaderboardOrder || []).slice();
+    const newOrder = list.map((it) => it.name);
+    // keep the outer leaderboard container in sync with collapsed state
+    const lbOuter = document.getElementById("leaderboard");
+    if (lbOuter) lbOuter.classList.toggle("collapsed", leaderboardCollapsed);
+    // when expanded, provide a header with a close control so users can collapse again
+    if (lbOuter && !leaderboardCollapsed) {
+      // remove any previous expander header
+      const prev = lbOuter.querySelector(".leaderboard-expander-header");
+      if (prev) prev.remove();
+      const hdr = document.createElement("div");
+      hdr.className = "leaderboard-expander-header";
+      const title = document.createElement("div");
+      title.className = "leaderboard-expander-title";
+      title.textContent = "Leaderboard";
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "tertiary leaderboard-close";
+      closeBtn.textContent = "Sluit";
+      closeBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        leaderboardCollapsed = true;
+        renderLeaderboard();
+      });
+      hdr.appendChild(title);
+      hdr.appendChild(closeBtn);
+      lbOuter.insertBefore(hdr, container);
+    } else if (lbOuter && leaderboardCollapsed) {
+      // remove header if present when collapsed
+      const prev = lbOuter.querySelector(".leaderboard-expander-header");
+      if (prev) prev.remove();
+    }
+    container.innerHTML = "";
+    // determine items to render depending on collapsed state
+    const toRender = leaderboardCollapsed
+      ? list.slice(0, LEADERBOARD_PREVIEW_COUNT)
+      : list;
+    toRender.forEach((it, i) => {
+      const row = document.createElement("div");
+      row.className = "leaderboard-item" + (i < 1 ? " top" : "");
+      const left = document.createElement("div");
+      left.className = "leaderboard-left";
+      const rank = document.createElement("div");
+      rank.className = "leaderboard-rank";
+      // when collapsed, still show the actual rank number from the full list
+      const realRank =
+        leaderboardCollapsed && list.findIndex((x) => x.name === it.name) !== -1
+          ? list.findIndex((x) => x.name === it.name) + 1
+          : i + 1;
+      rank.textContent = String(realRank);
+      const img = document.createElement("img");
+      img.className = "leaderboard-avatar";
+      img.alt = (it.name || "").toString() + " avatar";
+      img.src = it.avatar || avatarForName(it.name);
+      const infoWrap = document.createElement("div");
+      const nameEl = document.createElement("div");
+      nameEl.className = "leaderboard-name";
+      nameEl.textContent = it.name;
+      const meta = document.createElement("div");
+      meta.className = "leaderboard-meta";
+      meta.textContent = `Hoofdstukken: ${it.chapters} • Fouten: ${it.mistakes}`;
+      infoWrap.appendChild(nameEl);
+      infoWrap.appendChild(meta);
+      left.appendChild(rank);
+      left.appendChild(img);
+      left.appendChild(infoWrap);
+      const score = document.createElement("div");
+      score.className = "leaderboard-score";
+      score.textContent = String(computeScore(it));
+      row.appendChild(left);
+      row.appendChild(score);
+      // animate if position changed compared to previous render
+      try {
+        const oldIndex = oldOrder.indexOf(it.name);
+        const newIndex = newOrder.indexOf(it.name);
+        if (oldIndex !== -1 && newIndex < oldIndex) {
+          row.classList.add("moved-up");
+        } else if (oldIndex !== -1 && newIndex > oldIndex) {
+          row.classList.add("moved-down");
+        }
+      } catch (e) {}
+      container.appendChild(row);
+    });
+    // store for next comparison
+    window._ug_lastLeaderboardOrder = newOrder;
+    // when collapsed, add a small footer with a button to expand
+    if (leaderboardCollapsed && list.length > LEADERBOARD_PREVIEW_COUNT) {
+      const footer = document.createElement("div");
+      footer.className = "leaderboard-footer";
+      const btn = document.createElement("button");
+      btn.className = "tertiary";
+      btn.id = "leaderboardToggleBtn";
+      btn.textContent = "Bekijk alle";
+      btn.addEventListener("click", () => {
+        leaderboardCollapsed = false;
+        renderLeaderboard();
+      });
+      footer.appendChild(btn);
+      container.appendChild(footer);
+    }
+  }
+
+  // toggle when clicking the leaderboard header area (if present)
+  // Note: this code runs inside the outer DOMContentLoaded handler, so attach directly.
+  (function attachLeaderboardClick() {
+    const lb = document.getElementById("leaderboard");
+    if (!lb) return;
+    lb.addEventListener("click", (e) => {
+      // ignore clicks on explicit controls inside
+      if (e.target && e.target.tagName === "BUTTON") return;
+      // if collapsed, expand the leaderboard to show full view
+      if (leaderboardCollapsed) {
+        leaderboardCollapsed = false;
+        renderLeaderboard();
+      }
+    });
+  })();
+
+  function computeScore(item) {
+    // higher is better: base 100 per chapter minus mistakes*5
+    const max = (item.chapters || 1) * 100;
+    return Math.max(0, max - (item.mistakes || 0) * 10);
+  }
+
+  function updateLeaderboardWithUser(mistakes) {
+    // user identity
+    const profile = getProfile();
+    const name = profile && profile.name ? profile.name : "Jij";
+    // snapshot before changes to compute previous rank
+    const listBefore = getLeaderboard();
+    const sortedBefore = listBefore
+      .slice()
+      .sort((a, b) =>
+        a.mistakes !== b.mistakes
+          ? a.mistakes - b.mistakes
+          : b.chapters - a.chapters
+      );
+    const oldIndex = sortedBefore.findIndex((e) => e.name === name);
+
+    // update or create the user's entry
+    const list = getLeaderboard();
+    let entry = list.find((e) => e.name === name);
+    if (!entry) {
+      entry = {
+        name: name,
+        chapters: 0,
+        mistakes: 0,
+        avatar:
+          profile && profile.avatar ? profile.avatar : avatarForName(name),
+      };
+      list.push(entry);
+    }
+    entry.chapters = (entry.chapters || 0) + 1;
+    entry.mistakes = (entry.mistakes || 0) + (mistakes || 0);
+    if (profile && profile.avatar) entry.avatar = profile.avatar;
+    entry.lastAt = new Date().toISOString();
+
+    // persist and then compute new rank
+    try {
+      setLeaderboard(list);
+      const after = getLeaderboard()
+        .slice()
+        .sort((a, b) =>
+          a.mistakes !== b.mistakes
+            ? a.mistakes - b.mistakes
+            : b.chapters - a.chapters
+        );
+      const newIndex = after.findIndex((e) => e.name === name);
+      // celebrate only when user enters or moves into podium (top 3)
+      const enteredPodium =
+        newIndex !== -1 &&
+        newIndex <= 2 &&
+        (oldIndex === -1 || newIndex < oldIndex);
+      if (enteredPodium) setTimeout(() => showRankUpEffect(), 160);
+    } catch (e) {
+      // fallback: persist without celebration
+      try {
+        setLeaderboard(list);
+      } catch (er) {}
+    }
+  }
+
+  // show a small confetti burst and play a short chime when user moves up in leaderboard
+  function showRankUpEffect() {
+    // confetti dots
+    const screenEl = document.querySelector(".screen");
+    if (!screenEl) return;
+    const dots = [];
+    for (let i = 0; i < 14; i++) {
+      const d = document.createElement("div");
+      d.className = "confetti-dot";
+      d.style.left = 40 + Math.random() * 240 + "px";
+      d.style.top = 40 + Math.random() * 200 + "px";
+      d.style.background = [
+        "#ffd66a",
+        "#34c759",
+        "#00a6ff",
+        "#ff6b6b",
+        "#a28cff",
+      ][i % 5];
+      screenEl.appendChild(d);
+      dots.push(d);
+      setTimeout(() => d.classList.add("show"), i * 30);
+    }
+    // animate out
+    setTimeout(() => {
+      dots.forEach((d, idx) => {
+        d.style.transform = `translateY(${-(
+          60 +
+          Math.random() * 160
+        )}px) translateX(${Math.random() * 180 - 90}px) scale(${
+          1 + Math.random() * 0.6
+        })`;
+        setTimeout(() => d.remove(), 800 + idx * 20);
+      });
+    }, 250);
+
+    // short chime using WebAudio
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = "sine";
+      o.frequency.value = 880;
+      g.gain.value = 0.0015;
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start();
+      // fade out
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+      setTimeout(() => {
+        try {
+          o.stop();
+          ctx.close();
+        } catch (e) {}
+      }, 260);
+    } catch (e) {}
+  }
+
+  // Helper: create a tiny SVG data-URL avatar based on initials (fast, no external deps)
+  function avatarForName(name, size = 64) {
+    const initials = (name || "U")
+      .split(" ")
+      .map((s) => s[0] || "")
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+    const colors = [
+      "#F6D365",
+      "#FDBB2D",
+      "#FF7A7A",
+      "#9EE493",
+      "#9AD0F5",
+      "#D6A4FF",
+      "#FFD66A",
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++)
+      hash = (hash << 5) - hash + name.charCodeAt(i);
+    const color = colors[Math.abs(hash) % colors.length];
+    const fg = "#000";
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'><rect width='100%' height='100%' fill='${color}' rx='${Math.round(
+      size * 0.2
+    )}'/><text x='50%' y='50%' font-family='Arial, sans-serif' font-size='${Math.round(
+      size / 2.4
+    )}' fill='${fg}' dominant-baseline='middle' text-anchor='middle'>${initials}</text></svg>`;
+    return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+  }
+
+  // (demo randomizer removed) leaderboard remains seeded once on first load
+
+  // ---- Streak animations ----
+  function showStreakBadge(n) {
+    // mapping labels
+    const labels = {
+      1: "1 goed",
+      2: "2 op rij",
+      3: "3 op rij",
+      4: "Kwartet!",
+      5: "5 op rij",
+      6: "6x foutloos",
+      7: "7x foutloos",
+      8: "Perfect hoofdstuk!",
+    };
+    const text = labels[n] || n + " op rij";
+    // ensure single badge
+    let badge = document.querySelector(".streak-badge");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.className = "streak-badge";
+      document.querySelector(".screen").appendChild(badge);
+    }
+    badge.textContent = text;
+    // confetti
+    const dots = [];
+    for (let i = 0; i < 6; i++) {
+      const d = document.createElement("div");
+      d.className = "confetti-dot";
+      d.style.left = 40 + Math.random() * 240 + "px";
+      d.style.top = 60 + Math.random() * 160 + "px";
+      d.style.background = ["#ffd66a", "#34c759", "#00a6ff", "#ff6b6b", "gold"][
+        i % 5
+      ];
+      document.querySelector(".screen").appendChild(d);
+      dots.push(d);
+    }
+    requestAnimationFrame(() => {
+      badge.classList.add("show");
+      dots.forEach((d, idx) => {
+        setTimeout(() => {
+          d.classList.add("show");
+          d.style.transform = `translateY(${-(
+            60 +
+            Math.random() * 120
+          )}px) translateX(${Math.random() * 120 - 60}px) scale(${
+            1 + Math.random() * 0.6
+          })`;
+        }, idx * 60);
+      });
+    });
+    setTimeout(() => {
+      badge.classList.remove("show");
+      dots.forEach((d) => d.remove());
+    }, 1600);
   }
 
   // share and view insurance buttons
@@ -1421,6 +2114,12 @@ document.addEventListener("DOMContentLoaded", function () {
   showScreen("home");
   // ensure header avatar shows saved avatar (if any)
   updateHeaderAvatar();
+  // ensure seeded leaderboard exists and render it on the home screen
+  try {
+    seedLeaderboardIfEmpty();
+    renderLeaderboard();
+    // leaderboard is static for seeded demo accounts; user can still update their own score
+  } catch (e) {}
 
   // --- Carousel behavior (controls, indicators, swipe, keyboard) ---
   (function setupCarousel() {
